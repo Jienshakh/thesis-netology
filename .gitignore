@@ -1,0 +1,41 @@
+# Local .terraform directories and files
+**/.terraform/*
+**/.terraform*
+
+!.terraformrc
+
+# .tfstate files
+**/*.tfstate
+**/*.tfstate.*
+
+# own secret vars store
+**/personal.auto.tfvars
+
+# SA authorized_key
+.authorized_key.json
+
+# Файл backend.tfbackend  для инициализации роли infra
+backend.tfbackend
+
+# Inventory для kubespray
+**/inventory/k8s/inventory.ini
+
+# Kubernetes CSI service account key
+**/k8s/CSI/.authorized_key.json
+
+### Kubespray artifacts and credentials
+
+**/inventory/k8s/artifacts/
+**/inventory/k8s/credentials/
+
+### CSI sensetive manifests
+k8s/CSI/manifests/*
+!k8s/CSI/manifests/.gitkeep
+
+### test-app ingress
+
+**/k8s/app/manifests/ingress.yaml
+
+### Grafana ingress 
+
+**/k8s/monitoring/overlays/grafana-ingress.yaml
