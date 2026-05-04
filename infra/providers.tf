@@ -4,7 +4,23 @@ terraform {
       source = "yandex-cloud/yandex"
     }
 
+    local = {
+      source = "hashicorp/local"
+    }
+
+    template = {
+      source = "hashicorp/template"
+    }
+
+    random = {
+      source = "hashicorp/random"
+    }
+
+    null = {
+      source = "hashicorp/null"
+    }
   }
+
   required_version = ">= 1.13.0"
 
   backend "s3" {
