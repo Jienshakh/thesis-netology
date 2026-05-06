@@ -1,0 +1,18 @@
+version: 3
+
+projects:
+  - name: infra
+    dir: infra
+    workflow: custom
+
+workflows:
+  custom:
+    plan:
+      steps:
+        - init:
+            extra_args:
+              - "-backend-config=bucket=tfstate-tynkxv7a"
+              - "-backend-config=key=infra/terraform.tfstate"
+              - "-backend-config=endpoint=https://storage.yandexcloud.net"
+              - "-backend-config=region=ru-central1"
+        - plan
