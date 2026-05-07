@@ -24,7 +24,6 @@ locals {
   })
 }
 
-
 module "k8s_master" {
   source          = "git::https://github.com/jienshakh/yandex_compute_instance.git?ref=main"
   env_name        = "k8s" 
