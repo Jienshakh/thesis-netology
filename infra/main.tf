@@ -145,8 +145,8 @@ resource "local_file" "yc_csi_config" {
 ### Generate Secret for CSI
 
 locals {
-  # Если передали base64 - используем, иначе читаем из файла
-  sa_key_base64 = var.sa_key_base64 != "" ? var.sa_key_base64 : filebase64(var.service_account_key_file)
+  # Для CSI secret
+  sa_key_base64 = var.sa_key_base64 != "" ? var.sa_key_base64 : filebase64(var.csi_key_file)
 }
 
 resource "local_file" "yc_csi_secret" {

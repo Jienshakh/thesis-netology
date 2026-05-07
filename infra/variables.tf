@@ -21,24 +21,30 @@ variable "sa_name" {
   description = "service account name"
 }
 
-variable "service_account_key_json" {
-  description = "Service account key JSON content (base64 encoded for CSI)"
+variable "sa_key_json" {
+  description = "Service account key JSON content (for Atlantis)"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "service_account_key_file" {
-  description = "Path to service account key file (fallback for local run)"
+variable "sa_key_file" {
+  description = "Path to service account key file for Yandex provider"
   type        = string
   default     = "../.authorized_key.json"
 }
 
 variable "sa_key_base64" {
-  description = "Base64 encoded service account key (for CSI secret)"
+  description = "Base64 encoded service account key for CSI secret"
   type        = string
   sensitive   = true
   default     = ""
+}
+
+variable "csi_key_file" {
+  description = "Path to service account key file for CSI secret"
+  type        = string
+  default     = "../k8s/CSI/.authorized_key.json"
 }
 
 
