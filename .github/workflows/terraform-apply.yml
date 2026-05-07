@@ -14,7 +14,7 @@ jobs:
       
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.13.5
+          terraform_version: 1.10.5
 
       - name: Create expected files from secrets
         run: |
@@ -40,34 +40,17 @@ jobs:
         working-directory: ./infra
         run: terraform init -backend-config=../backend.tfbackend
 
-      - name: Terraform Plan
+      - name: Terraform Plan & Apply
         working-directory: ./infra
-        id: plan
         env:
           TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
           TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
           TF_VAR_username: ${{ secrets.YC_USERNAME }}
           TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
+          TF_VAR_bucket_name: ${{ secrets.BUCKET_NAME }}
+          TF_VAR_key: ${{ secrets.KEY }}
+          TF_VAR_region: ${{ secrets.REGION }}
+          TF_VAR_endpoint: ${{ secrets.ENDPOINT }}
         run: |
-          terraform plan -detailed-exitcode -no-color -out=tfplan || exit_code=$?
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-        continue-on-error: true
-
-      # ВОТ ЭТОТ ШАГ НУЖНО ДОБАВИТЬ
-      - name: Terraform Apply
-        working-directory: ./infra
-        if: steps.plan.outputs.exit_code == 2  # 2 = есть изменения
-        env:
-          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
-          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
-          TF_VAR_username: ${{ secrets.YC_USERNAME }}
-          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
-        run: terraform apply -auto-approve tfplan
-
-      - name: No changes
-        if: steps.plan.outputs.exit_code == 0
-        run: echo "No changes to apply"
-
-      - name: Plan failed
-        if: steps.plan.outputs.exit_code == 1
-        run: exit 1
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
