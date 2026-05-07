@@ -1,11 +1,3 @@
-data "terraform_remote_state" "init" {
-  backend = "local"
-
-  config = {
-    path = "../init/init.tfstate"
-  }
-}
-
 module "k8s-network" {
   source       = "./modules/vpc"
   env_name     = "k8s"
