@@ -30,3 +30,24 @@ output "region" {
   value       = "ru-central1"
 }
 
+output "infra_sa_private_key" {
+  description = "Authorized private key for infrastructure SA (JSON format)"
+  value       = yandex_iam_service_account_key.sa-auth-key.private_key
+  sensitive   = true
+}
+
+output "infra_sa_id" {
+  description = "ID of infrastructure service account"
+  value       = yandex_iam_service_account.sa_thesis.id
+}
+
+output "csi_sa_private_key" {
+  description = "Authorized private key for CSI SA (JSON format)"
+  value       = yandex_iam_service_account_key.sa_k8s_auth_key.private_key
+  sensitive   = true
+}
+
+output "csi_sa_id" {
+  description = "ID of CSI service account"
+  value       = yandex_iam_service_account.sa_k8s.id
+}

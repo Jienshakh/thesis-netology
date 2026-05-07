@@ -1,0 +1,82 @@
+name: Terraform Apply on main branch
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/**'
+      - 'init/**'
+
+jobs:
+  terraform-apply:
+    runs-on: ubuntu-latest
+    concurrency: 
+      group: terraform-state
+      cancel-in-progress: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      # Создаем временный файл с ключом SA
+      - name: Create SA key file
+        run: |
+          echo '${{ secrets.YC_SA_JSON_KEY }}' > /tmp/sa-key.json
+          echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/sa-key.json" >> $GITHUB_ENV
+
+      # Запускаем init (создает/обновляет SA, бакет, ключи)
+      - name: Terraform Init & Apply (init/)
+        working-directory: ./init
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      # Получаем outputs из init для использования в infra
+      - name: Extract outputs from init
+        working-directory: ./init
+        run: |
+          terraform output -raw infra_sa_private_key > /tmp/infra-sa-key.json
+          terraform output -raw bucket_name > /tmp/bucket.txt
+          terraform output -raw access_key > /tmp/access_key.txt
+          terraform output -raw secret_key > /tmp/secret_key.txt
+
+      # Переключаемся на ключ инфраструктурного SA (который только что создали)
+      - name: Switch to infra SA key
+        run: |
+          echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/infra-sa-key.json" >> $GITHUB_ENV
+
+      # Запускаем основную инфраструктуру
+      - name: Terraform Init (infra/)
+        working-directory: ./infra
+        run: |
+          BUCKET=$(cat /tmp/bucket.txt)
+          ACCESS_KEY=$(cat /tmp/access_key.txt)
+          SECRET_KEY=$(cat /tmp/secret_key.txt)
+          
+          terraform init \
+            -backend-config="bucket=$BUCKET" \
+            -backend-config="access_key=$ACCESS_KEY" \
+            -backend-config="secret_key=$SECRET_KEY"
+
+      - name: Terraform Plan
+        working-directory: ./infra
+        id: plan
+        run: |
+          terraform plan -detailed-exitcode -out=tfplan || exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Terraform Apply
+        working-directory: ./infra
+        if: steps.plan.outputs.exit_code == 2
+        run: terraform apply -auto-approve tfplan
+
+      - name: Show outputs
+        working-directory: ./infra
+        if: always()
+        run: terraform output
