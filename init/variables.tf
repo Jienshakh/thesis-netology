@@ -27,6 +27,12 @@ variable "sa_k8s_name" {
   default     = "k8s-sa"
 }
 
+variable "service_account_key_file" {
+  description = "Path to service account key file"
+  type        = string
+  default     = "" 
+}
+
 ############# Storage variables #################
 
 variable "lab_bucket_size" {
