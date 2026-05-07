@@ -74,7 +74,7 @@ module "k8s_worker" {
   }
 }
 
-## NLB
+### NLB
 
 resource "yandex_lb_target_group" "k8s_nodes" {
   name      = var.target_group_name
