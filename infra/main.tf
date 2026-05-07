@@ -74,7 +74,6 @@ module "k8s_worker" {
   }
 }
 
-
 ## NLB
 
 resource "yandex_lb_target_group" "k8s_nodes" {
