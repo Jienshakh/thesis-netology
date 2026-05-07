@@ -6,7 +6,7 @@ variable "username" {
 
 variable "ssh_public_key" {
   type        = string
-  description = "Location of SSH public key."
+  description = "SSH public key content"
 }
 
 variable packages {

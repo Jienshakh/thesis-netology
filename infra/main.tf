@@ -16,14 +16,12 @@ module "k8s-network" {
   ]
 }
 
-data "template_file" "cloudinit" {
-  template = file("./cloud-init.yaml")
-  
-  vars = {
-    username           = var.username
-    ssh_public_key     = file(var.ssh_public_key)
-    packages           = jsonencode(var.packages)
-  }
+locals {
+  cloudinit = templatefile("./cloud-init.yaml", {
+    username       = var.username
+    ssh_public_key = var.ssh_public_key
+    packages       = jsonencode(var.packages)
+  })
 }
 
 
