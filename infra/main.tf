@@ -145,13 +145,13 @@ resource "local_file" "yc_csi_config" {
 ### Generate Secret for CSI
 
 locals {
-  sa_key_base64 = filebase64("../k8s/CSI/.authorized_key.json")
+  # Если передали base64 - используем, иначе читаем из файла
+  sa_key_base64 = var.sa_key_base64 != "" ? var.sa_key_base64 : filebase64(var.service_account_key_file)
 }
 
 resource "local_file" "yc_csi_secret" {
   content = templatefile("../k8s/CSI/secret.yaml.tpl", {
     sa_key_json = local.sa_key_base64
   })
-
   filename = "../k8s/CSI/manifests/secret.yaml"
 }
