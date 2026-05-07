@@ -14,21 +14,13 @@ jobs:
       
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.13.5
+          terraform_version: 1.10.5
 
-      # СОЗДАЕМ ФАЙЛЫ В ПРАВИЛЬНЫХ МЕСТАХ
       - name: Create expected files from secrets
         run: |
-          # Файл для провайдера (в корне репозитория, рядом с папкой infra)
           echo '${{ secrets.YC_SA_JSON_KEY }}' > .authorized_key.json
-          
-          # Файл для CSI драйвера (в папке k8s/CSI)
           mkdir -p k8s/CSI
           echo '${{ secrets.YC_CSI_SA_JSON_KEY }}' > k8s/CSI/.authorized_key.json
-          
-          # Проверяем созданные файлы (для отладки)
-          ls -la .authorized_key.json
-          ls -la k8s/CSI/.authorized_key.json
 
       - name: Create backend config
         run: |
@@ -61,9 +53,10 @@ jobs:
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
         continue-on-error: true
 
+      # ВОТ ЭТОТ ШАГ НУЖНО ДОБАВИТЬ
       - name: Terraform Apply
         working-directory: ./infra
-        if: steps.plan.outputs.exit_code == 2
+        if: steps.plan.outputs.exit_code == 2  # 2 = есть изменения
         env:
           TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
           TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
@@ -71,12 +64,10 @@ jobs:
           TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
         run: terraform apply -auto-approve tfplan
 
-      - name: Plan Output (no changes)
+      - name: No changes
         if: steps.plan.outputs.exit_code == 0
         run: echo "No changes to apply"
 
       - name: Plan failed
         if: steps.plan.outputs.exit_code == 1
-        run: |
-          echo "Terraform plan failed"
-          exit 1
+        run: exit 1
