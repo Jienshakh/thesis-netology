@@ -45,7 +45,6 @@ resource "yandex_resourcemanager_folder_iam_member" "sa_k8s_compute_editor" {
 
 #### Create bucket 
 
-
 # To always have a unique bucket name
 resource "random_string" "unique_id" {
   length  = 8
