@@ -1,94 +1,38 @@
-name: Terraform Apply on main branch
+name: Terraform Apply on main
 
 on:
   push:
     branches: [ main ]
     paths:
       - 'infra/**'
-      - 'init/**'
 
 jobs:
-  terraform-apply:
+  terraform-infra:
     runs-on: ubuntu-latest
-    concurrency: terraform-state
-    
     steps:
       - uses: actions/checkout@v4
       
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.13.5
+          terraform_version: 1.10.5
 
-      - name: Create SA key file
+      - name: Setup auth
         run: |
           echo '${{ secrets.YC_SA_JSON_KEY }}' > /tmp/sa-key.json
           echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/sa-key.json" >> $GITHUB_ENV
 
-      - name: Terraform Init & Apply (init/)
-        working-directory: ./init
-        env:
-          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
-          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
-          TF_VAR_username: ${{ secrets.YC_USERNAME }}
-          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
-        run: |
-          terraform init
-          terraform apply -auto-approve
-
-      - name: Extract outputs
-        working-directory: ./init
-        run: |
-          terraform output -raw infra_sa_private_key > /tmp/infra-sa-key.json
-          terraform output -raw bucket_name > /tmp/bucket.txt
-          terraform output -raw access_key > /tmp/access_key.txt
-          terraform output -raw secret_key > /tmp/secret_key.txt
-          terraform output -raw endpoint > /tmp/endpoint.txt
-          terraform output -raw region > /tmp/region.txt
-
-      - name: Switch to infra SA key
-        run: echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/infra-sa-key.json" >> $GITHUB_ENV
-
       - name: Terraform Init (infra/)
         working-directory: ./infra
-        env:
-          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
-          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
-          TF_VAR_username: ${{ secrets.YC_USERNAME }}
-          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
         run: |
-          BUCKET=$(cat /tmp/bucket.txt)
-          ACCESS_KEY=$(cat /tmp/access_key.txt)
-          SECRET_KEY=$(cat /tmp/secret_key.txt)
-          ENDPOINT=$(cat /tmp/endpoint.txt)
-          REGION=$(cat /tmp/region.txt)
-          
           terraform init -reconfigure \
-            -backend-config="endpoint=$ENDPOINT" \
-            -backend-config="region=$REGION" \
-            -backend-config="bucket=$BUCKET" \
-            -backend-config="access_key=$ACCESS_KEY" \
-            -backend-config="secret_key=$SECRET_KEY" \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
             -backend-config="key=infra/terraform.tfstate"
-
-      - name: Terraform Plan
-        working-directory: ./infra
-        id: plan
-        run: |
-          terraform plan -detailed-exitcode -out=tfplan || exit_code=$?
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-        continue-on-error: true
-        env:
-          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
-          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
-          TF_VAR_username: ${{ secrets.YC_USERNAME }}
-          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
 
       - name: Terraform Apply
         working-directory: ./infra
-        if: steps.plan.outputs.exit_code == 2
-        run: terraform apply -auto-approve tfplan
         env:
           TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
           TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
           TF_VAR_username: ${{ secrets.YC_USERNAME }}
           TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
+        run: terraform apply -auto-approve
