@@ -146,7 +146,7 @@ resource "local_file" "yc_csi_config" {
 
 locals {
   # Для CSI secret
-  sa_key_base64 = var.sa_key_base64 != "" ? var.sa_key_base64 : filebase64(var.csi_key_file)
+  sa_key_base64 = filebase64(coalesce(var.csi_key_file, "../k8s/CSI/.authorized_key.json"))
 }
 
 resource "local_file" "yc_csi_secret" {
