@@ -21,7 +21,7 @@ data "template_file" "cloudinit" {
   
   vars = {
     username           = var.username
-    ssh_public_key     = file(var.ssh_public_key)
+    ssh_public_key     = var.ssh_public_key
     packages           = jsonencode(var.packages)
   }
 }

@@ -10,58 +10,65 @@ on:
 jobs:
   terraform-apply:
     runs-on: ubuntu-latest
-    concurrency: 
-      group: terraform-state
-      cancel-in-progress: false
+    concurrency: terraform-state
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v4
+      
+      - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.13.5
+          terraform_version: 1.10.5
 
-      # Создаем временный файл с ключом SA
       - name: Create SA key file
         run: |
           echo '${{ secrets.YC_SA_JSON_KEY }}' > /tmp/sa-key.json
           echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/sa-key.json" >> $GITHUB_ENV
 
-      # Запускаем init (создает/обновляет SA, бакет, ключи)
       - name: Terraform Init & Apply (init/)
         working-directory: ./init
+        env:
+          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
+          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
+          TF_VAR_username: ${{ secrets.YC_USERNAME }}
+          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
         run: |
           terraform init
           terraform apply -auto-approve
 
-      # Получаем outputs из init для использования в infra
-      - name: Extract outputs from init
+      - name: Extract outputs
         working-directory: ./init
         run: |
           terraform output -raw infra_sa_private_key > /tmp/infra-sa-key.json
           terraform output -raw bucket_name > /tmp/bucket.txt
           terraform output -raw access_key > /tmp/access_key.txt
           terraform output -raw secret_key > /tmp/secret_key.txt
+          terraform output -raw endpoint > /tmp/endpoint.txt
+          terraform output -raw region > /tmp/region.txt
 
-      # Переключаемся на ключ инфраструктурного SA (который только что создали)
       - name: Switch to infra SA key
-        run: |
-          echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/infra-sa-key.json" >> $GITHUB_ENV
+        run: echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/infra-sa-key.json" >> $GITHUB_ENV
 
-      # Запускаем основную инфраструктуру
       - name: Terraform Init (infra/)
         working-directory: ./infra
+        env:
+          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
+          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
+          TF_VAR_username: ${{ secrets.YC_USERNAME }}
+          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
         run: |
           BUCKET=$(cat /tmp/bucket.txt)
           ACCESS_KEY=$(cat /tmp/access_key.txt)
           SECRET_KEY=$(cat /tmp/secret_key.txt)
+          ENDPOINT=$(cat /tmp/endpoint.txt)
+          REGION=$(cat /tmp/region.txt)
           
-          terraform init \
+          terraform init -reconfigure \
+            -backend-config="endpoint=$ENDPOINT" \
+            -backend-config="region=$REGION" \
             -backend-config="bucket=$BUCKET" \
             -backend-config="access_key=$ACCESS_KEY" \
-            -backend-config="secret_key=$SECRET_KEY"
+            -backend-config="secret_key=$SECRET_KEY" \
+            -backend-config="key=infra/terraform.tfstate"
 
       - name: Terraform Plan
         working-directory: ./infra
@@ -70,13 +77,18 @@ jobs:
           terraform plan -detailed-exitcode -out=tfplan || exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
         continue-on-error: true
+        env:
+          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
+          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
+          TF_VAR_username: ${{ secrets.YC_USERNAME }}
+          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
 
       - name: Terraform Apply
         working-directory: ./infra
         if: steps.plan.outputs.exit_code == 2
         run: terraform apply -auto-approve tfplan
-
-      - name: Show outputs
-        working-directory: ./infra
-        if: always()
-        run: terraform output
+        env:
+          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
+          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
+          TF_VAR_username: ${{ secrets.YC_USERNAME }}
+          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
