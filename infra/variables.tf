@@ -33,7 +33,6 @@ variable "csi_key_file" {
   default     = null
 }
 
-
 ############## NLB Variables ######################
 
 variable "target_group_name" {
