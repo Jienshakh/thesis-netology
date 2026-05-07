@@ -16,10 +16,15 @@ jobs:
         with:
           terraform_version: 1.13.5
 
-      - name: Setup auth
+      # СОЗДАЕМ ФАЙЛЫ, КОТОРЫЕ ОЖИДАЕТ TERRAFORM
+      - name: Create expected files from secrets
         run: |
-          echo '${{ secrets.YC_SA_JSON_KEY }}' > /tmp/sa-key.json
-          echo "YC_SERVICE_ACCOUNT_KEY_FILE=/tmp/sa-key.json" >> $GITHUB_ENV
+          # Файл для провайдера
+          echo '${{ secrets.YC_SA_JSON_KEY }}' > ../.authorized_key.json
+          
+          # Файл для CSI драйвера
+          mkdir -p ../k8s/CSI
+          echo '${{ secrets.YC_CSI_SA_JSON_KEY }}' > ../k8s/CSI/.authorized_key.json
 
       - name: Create backend config
         run: |
