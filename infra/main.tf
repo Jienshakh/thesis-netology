@@ -54,7 +54,7 @@ module "k8s_worker" {
   boot_disk_size  = 20
   instance_memory = 6
   image_family    = "ubuntu-2404-lts" 
-  public_ip       = true
+  public_ip       = false
 
   labels = { 
     project = "k8s"
