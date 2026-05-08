@@ -50,10 +50,10 @@ module "k8s_worker" {
   subnet_ids      = module.k8s-network.subnet_ids
   instance_name   = "worker"
   instance_count  = 2
-  instance_cores  = 2
+  instance_cores  = 4
   boot_disk_size  = 20
-  instance_memory = 4
-  image_family    = "ubuntu-2404-lts"
+  instance_memory = 6
+  image_family    = "ubuntu-2404-lts" 
   public_ip       = true
 
   labels = { 
