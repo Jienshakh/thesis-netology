@@ -16,3 +16,14 @@ output "nlb_ip" {
     ]
   ])[0]
 }
+
+output "ssh_public_key" {
+  description = "SSH public key for VM access"
+  value       = var.ssh_public_key
+  sensitive   = true
+}
+
+output "username" {
+  description = "Default VM username"
+  value       = var.username
+}

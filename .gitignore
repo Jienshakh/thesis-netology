@@ -39,3 +39,6 @@ k8s/CSI/manifests/*
 ### Grafana ingress 
 
 **/k8s/monitoring/overlays/grafana-ingress.yaml
+
+### Github Action Secrets
+**.secret**

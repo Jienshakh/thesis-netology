@@ -18,9 +18,9 @@ jobs:
 
       - name: Create expected files from secrets
         run: |
-          echo '${{ secrets.YC_SA_JSON_KEY }}' > .authorized_key.json
+          echo '${{ secrets.SA_JSON_KEY }}' > .authorized_key.json
           mkdir -p k8s/CSI
-          echo '${{ secrets.YC_CSI_SA_JSON_KEY }}' > k8s/CSI/.authorized_key.json
+          echo '${{ secrets.CSI_SA_JSON_KEY }}' > k8s/CSI/.authorized_key.json
 
       - name: Create backend config
         run: |
@@ -43,10 +43,10 @@ jobs:
       - name: Terraform Plan & Apply
         working-directory: ./infra
         env:
-          TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
-          TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
-          TF_VAR_username: ${{ secrets.YC_USERNAME }}
-          TF_VAR_ssh_public_key: ${{ secrets.YC_SSH_PUBLIC_KEY }}
+          TF_VAR_cloud_id: ${{ secrets.CLOUD_ID }}
+          TF_VAR_folder_id: ${{ secrets.FOLDER_ID }}
+          TF_VAR_username: ${{ secrets.USERNAME }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
           TF_VAR_bucket_name: ${{ secrets.BUCKET_NAME }}
           TF_VAR_key: ${{ secrets.KEY }}
           TF_VAR_region: ${{ secrets.REGION }}
