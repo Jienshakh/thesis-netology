@@ -49,7 +49,7 @@ module "k8s_worker" {
   subnet_zones    = module.k8s-network.subnet_zones
   subnet_ids      = module.k8s-network.subnet_ids
   instance_name   = "worker"
-  instance_count  = 4
+  instance_count  = 2
   instance_cores  = 2
   boot_disk_size  = 20
   instance_memory = 4
