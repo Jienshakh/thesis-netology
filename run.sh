@@ -34,6 +34,7 @@ EOF
 ### Запускаем infra
 
 terraform -chdir=infra init -backend-config=../backend.tfbackend
+terraform -chdir=infra plan
 terraform -chdir=infra apply -auto-approve
 
 ### Гененируем inventory для kubespray

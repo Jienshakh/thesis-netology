@@ -51,7 +51,7 @@ module "k8s_worker" {
   instance_name   = "worker"
   instance_count  = 2
   instance_cores  = 4
-  boot_disk_size  = 20
+  boot_disk_size  = 30
   instance_memory = 6
   image_family    = "ubuntu-2404-lts" 
   public_ip       = false
