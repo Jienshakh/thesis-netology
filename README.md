@@ -92,3 +92,28 @@ cd thesis-netology
 - run.sh - скрипт для развёртывания
 - update_inventory.sh - скрипт обновления инвентори
 - create_action_secrets_file.sh - скрипт для создания секретов в Github для работы workflow
+
+### 9. Создание файлов с переменными
+
+В директории `init/` и `infra/` необходимо создать файлы `personal.auto.tfvars` с персональными значениями.
+
+**Для `init/personal.auto.tfvars`:**
+```hcl
+cloud_id  = "<ваш_cloud_id>"
+folder_id = "<ваш_folder_id>"
+```
+
+**Для `infra/personal.auto.tfvars`:**
+
+```hcl
+cloud_id       = "<ваш_cloud_id>"
+folder_id      = "<ваш_folder_id>"
+ssh_public_key = <<-EOF
+<содержимое файла ~/.ssh/id_ed25519.pub>
+EOF
+username       = "ubuntu"
+```
+Как получить values:
+
+- `cloud_id и folder_id` — выполнить `yc config list` или посмотреть в консоли Яндекс.Облака
+- `ssh_public_key` — содержимое файла `~/.ssh/id_ed25519.pub`

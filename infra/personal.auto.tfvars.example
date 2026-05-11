@@ -1,0 +1,6 @@
+cloud_id  = "<ваш_cloud_id>"
+folder_id = "<ваш_folder_id>"
+ssh_public_key = <<-EOF
+<публичная часть SSH ключа созданного ранее>
+EOF
+username = "ubuntu"
