@@ -28,9 +28,9 @@ module "k8s_master" {
   instance_count  = 1
   instance_cores  = 2 
   instance_memory = 4
-  boot_disk_size  = 15
+  boot_disk_size  = 20
   image_family    = "ubuntu-2404-lts"
-  public_ip       = true
+  public_ip       = false
 
   labels = { 
     project = "k8s"
@@ -49,7 +49,7 @@ module "k8s_worker" {
   subnet_zones    = module.k8s-network.subnet_zones
   subnet_ids      = module.k8s-network.subnet_ids
   instance_name   = "worker"
-  instance_count  = 2
+  instance_count  = 3
   instance_cores  = 4
   boot_disk_size  = 30
   instance_memory = 6
