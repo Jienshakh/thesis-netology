@@ -12,6 +12,13 @@ variable "ssh_public_key" {
 variable packages {
   type    = list
   default = [
+    "vim"
+  ]
+}
+
+variable packages_control {
+  type    = list
+  default = [
     "vim",
     "docker.io"
   ]

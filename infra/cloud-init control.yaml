@@ -9,4 +9,9 @@ users:
 
 package_update: true
 package_upgrade: false
-packages: ${packages}
+packages: ${packages_control}
+
+runcmd:
+  - usermod -aG docker ubuntu
+  - systemctl restart docker
+  - docker --version

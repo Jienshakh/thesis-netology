@@ -18,6 +18,41 @@ data "template_file" "cloudinit" {
   }
 }
 
+data "template_file" "cloudinit_control" {
+  template = file("./cloud-init-control.yaml")
+  
+  vars = {
+    username           = var.username
+    ssh_public_key     = var.ssh_public_key
+    packages_control   = jsonencode(var.packages_control)
+  }
+}
+
+module "k8s_control" {
+  source          = "git::https://github.com/jienshakh/yandex_compute_instance.git?ref=main"
+  env_name        = "k8s" 
+  network_id      = module.k8s-network.network_id
+  subnet_zones    = module.k8s-network.subnet_zones
+  subnet_ids      = module.k8s-network.subnet_ids
+  instance_name   = "control"
+  instance_count  = 1
+  instance_cores  = 2 
+  instance_memory = 4
+  boot_disk_size  = 15
+  instance_core_fraction = 20
+  image_family    = "ubuntu-2404-lts"
+  public_ip       = true
+
+  labels = { 
+    project = "k8s"
+  }
+
+  metadata = {
+    user-data          = data.template_file.cloudinit_control.rendered #Для демонстрации №3
+    serial-port-enable = 1
+  }
+}
+
 module "k8s_master" {
   source          = "git::https://github.com/jienshakh/yandex_compute_instance.git?ref=main"
   env_name        = "k8s" 
@@ -56,7 +91,7 @@ module "k8s_worker" {
   instance_memory = 6
   instance_core_fraction = 20
   image_family    = "ubuntu-2404-lts" 
-  public_ip       = true
+  public_ip       = false
 
   labels = { 
     project = "k8s"
