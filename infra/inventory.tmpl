@@ -1,23 +1,23 @@
 [all]
-%{ for idx, ip in master_public_ips ~}
+%{ for idx, ip in master_private_ips ~}
 k8s-master-${idx} ansible_host=${ip} ansible_user=ubuntu ip=${master_private_ips[idx]}
 %{ endfor ~}
-%{ for idx, ip in worker_public_ips ~}
+%{ for idx, ip in worker_private_ips ~}
 k8s-worker-${idx} ansible_host=${ip} ansible_user=ubuntu ip=${worker_private_ips[idx]}
 %{ endfor ~}
 
 [kube_control_plane]
-%{ for idx, _ in master_public_ips ~}
+%{ for idx, _ in master_private_ips ~}
 k8s-master-${idx}
 %{ endfor ~}
 
 [etcd]
-%{ for idx, _ in master_public_ips ~}
+%{ for idx, _ in master_private_ips ~}
 k8s-master-${idx}
 %{ endfor ~}
 
 [kube_node]
-%{ for idx, _ in worker_public_ips ~}
+%{ for idx, _ in worker_private_ips ~}
 k8s-worker-${idx}
 %{ endfor ~}
 

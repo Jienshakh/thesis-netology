@@ -13,6 +13,6 @@ variable packages {
   type    = list
   default = [
     "vim",
-    "nginx"
+    "docker.io"
   ]
 }

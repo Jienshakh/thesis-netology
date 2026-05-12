@@ -29,6 +29,7 @@ module "k8s_master" {
   instance_cores  = 2 
   instance_memory = 4
   boot_disk_size  = 20
+  instance_core_fraction = 20
   image_family    = "ubuntu-2404-lts"
   public_ip       = false
 
@@ -53,8 +54,9 @@ module "k8s_worker" {
   instance_cores  = 4
   boot_disk_size  = 30
   instance_memory = 6
+  instance_core_fraction = 20
   image_family    = "ubuntu-2404-lts" 
-  public_ip       = false
+  public_ip       = true
 
   labels = { 
     project = "k8s"
