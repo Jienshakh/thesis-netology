@@ -15,4 +15,3 @@ runcmd:
   - usermod -aG docker ubuntu
   - systemctl restart docker
   - docker --version
-
