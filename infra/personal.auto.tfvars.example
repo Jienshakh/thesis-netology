@@ -4,3 +4,4 @@ ssh_public_key = <<-EOF
 <публичная часть SSH ключа созданного ранее>
 EOF
 username = "ubuntu"
+
