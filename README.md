@@ -250,12 +250,12 @@ NLB используется как единая точка входа во вн
 Пример:
 
 ```text
-grafana.103.76.54.202.nip.io
+grafana.${ТУТ-АДРЕС-ВАШЕГО-NLB}.nip.io
 ```
 
 Где:
 
-- `103.76.54.202` — публичный IP-адрес Network Load Balancer;
+- `${ТУТ-АДРЕС-ВАШЕГО-NLB}` — публичный IP-адрес Network Load Balancer;
 - `nip.io` — wildcard DNS сервис;
 - `grafana` — имя сервиса, определённое в Ingress.
 
@@ -367,7 +367,7 @@ kubectl get pods -A
 
 Кластер готов к работе.
 
-## Интерактивный терминальный интерфейс `k9s`
+### Интерактивный терминальный интерфейс `k9s`
 
 Для удобства работы с Kubernetes-кластером можно установить интерактивный терминальный интерфейс `k9s`.
 
@@ -525,5 +525,290 @@ kubectl get ingress -n monitoring
 
 Grafana доступна через Ingress и Network Load Balancer.
 
-## Деплой инфраструктуры в terraform pipeline
+## Деплой инфраструктуры в Terraform pipeline
 
+Из предложенных в задании вариантов был выбран альтернативный вариант №3: автоматический запуск и применение Terraform-конфигурации из Git-репозитория с помощью CI/CD системы.
+
+В качестве CI/CD системы используется GitHub Actions.
+
+Workflow описан в файле:
+
+```text
+.github/workflows/terraform-apply.yml
+```
+
+В pipeline применяется только слой `infra`, так как слой `init` запускается однократно при первоначальной подготовке инфраструктуры. Его state хранится локально на управляющем хосте и используется для создания:
+- S3 bucket для Terraform backend;
+- сервисного аккаунта Terraform.
+
+### Подготовка GitHub Secrets
+
+Для успешного выполнения workflow необходимо создать GitHub Secrets.
+
+1. На хосте `control-vm`, где расположен репозиторий проекта, запустить скрипт:
+
+```bash
+bash create_action_secrets_file.sh
+```
+
+В результате будет создан файл `.secrets` со списком переменных окружения для GitHub Actions.
+
+### Создание GitHub Secrets
+
+Секреты можно создать двумя способами.
+
+#### Вариант 1. Создание вручную
+
+В репозитории GitHub перейти:
+
+```text
+Settings → Secrets and variables → Actions
+```
+
+И создать секреты вручную.
+
+#### Вариант 2. Создание через GitHub CLI
+
+Установить GitHub CLI:
+
+[GitHub CLI Installation Guide](https://github.com/cli/cli/blob/trunk/docs/install_linux.md#debian)
+
+Пройти аутентификацию:
+
+[GitHub CLI Quickstart](https://docs.github.com/en/github-cli/github-cli/quickstart#prerequisites)
+
+После этого выполнить команду:
+
+```bash
+while IFS='=' read -r key value
+do
+  gh secret set "$key" --body "$value" --repo <username>/<repository>
+done < .secrets
+```
+
+### Запуск workflow
+
+После создания секретов workflow можно запустить несколькими способами:
+
+- выполнить `push` в ветку `main`;
+- вручную через GitHub web-интерфейс:
+  `Actions → Terraform Apply on main → Run workflow`;
+- через GitHub CLI:
+
+```bash
+gh workflow run "Terraform Apply on main" --ref main
+```
+
+### Результат
+
+При выполнении workflow автоматически:
+- выполняется `terraform init`;
+- формируется `terraform plan`;
+- применяется `terraform apply`;
+- обновляется инфраструктура в Yandex Cloud.
+
+## Установка и настройка CI/CD
+
+### Установка CSI драйвера
+
+Так как для установки GitLab требуются PVC, сначала необходимо установить CSI-драйвер в кластер и применить сгенерированные Terraform манифесты для его настройки (`secret`, `ingress`, `configmap`):
+
+```bash
+kubectl apply -f k8s/CSI/v1.2.0
+kubectl apply -f k8s/CSI/manifests
+```
+
+После этого PVC будут автоматически создавать Persistent Volume в Yandex Cloud.
+
+---
+
+### Развертывание GitLab через Helm
+
+Для развертывания GitLab используется официальный Helm chart.
+
+Kubespray уже устанавливает Helm на master-ноды кластера, поэтому дополнительная установка Helm не требуется.
+
+Чтобы не устанавливать Helm на `k8s-control-0`, подключитесь по SSH к `k8s-master-0` и выполните установку оттуда.
+
+#### 1. Скопировать values.yaml на master-ноду
+
+```bash
+scp k8s/gitlab/helm/values.yaml ubuntu@<приватный_IP_k8s-master-0>:~
+```
+
+#### 2. Подключиться к master-ноде
+
+```bash
+ssh ubuntu@<приватный_IP_k8s-master-0>
+```
+
+#### 3. Добавить Helm-репозиторий GitLab
+
+```bash
+helm repo add gitlab https://charts.gitlab.io
+helm repo update
+```
+
+#### 4. Установить GitLab
+
+```bash
+helm install gitlab gitlab/gitlab -f values.yaml
+```
+
+> Примечание: так как кластер имеет ограниченные ресурсы, развертывание может занять 10–15 минут. Дольше всего инициализируется PostgreSQL и pod `webservice`.
+
+---
+
+### Получение доступа к GitLab
+
+Адрес GitLab можно посмотреть через Ingress:
+
+```bash
+kubectl get ingress
+```
+
+Пользователь:
+
+```text
+root
+```
+
+Пароль хранится в секрете:
+
+```bash
+kubectl get secret gitlab-gitlab-initial-root-password \
+  -o jsonpath="{.data.password}" | base64 -d
+```
+
+---
+
+### Создание проекта и Runner
+
+После входа в GitLab:
+
+1. Создать группу, например `netology`
+2. Создать проект `test-app`
+3. Перейти:
+   `Settings → CI/CD → Runners`
+4. Нажать `Create project runner`
+5. Указать:
+   - tag: `release`
+   - включить `Run untagged jobs`
+
+После создания Runner GitLab сгенерирует token.
+
+---
+
+### Установка GitLab Runner через Helm
+
+Установить runner:
+
+```bash
+helm upgrade --install gitlab-runner gitlab/gitlab-runner \
+  --namespace default \
+  --set gitlabUrl=http://gitlab.<NLB-IP>.nip.io \
+  --set runnerToken="<RUNNER_TOKEN>" \
+  --set rbac.create=true \
+  --set serviceAccount.create=true \
+  --set runners.config='
+    [[runners]]
+      [runners.kubernetes]
+        privileged = true
+        service_account = "helm-deployer"
+  '
+```
+
+---
+
+### Создание ServiceAccount для деплоя
+
+Манифесты расположены в директории:
+
+```text
+k8s/gitlab/manifests
+```
+
+Применить их:
+
+```bash
+kubectl apply -f k8s/gitlab/manifests
+```
+
+---
+
+### Подготовка тестового приложения
+
+Склонировать репозиторий:
+
+[thesis-test-app repository](https://github.com/Jienshakh/thesis-test-app)
+
+В файлах `.gitlab-ci.yml` и helm/values.yaml заменить адрес NLB на актуальный.
+
+Изменить remote репозитория:
+
+```bash
+git remote set-url origin http://gitlab.<NLB-IP>.nip.io/netology/test-app.git
+```
+
+Запушить проект:
+
+```bash
+git add .
+git commit -m "Initial commit"
+git push --set-upstream origin main
+```
+Пароль и логин теже что и для аутентификации в Gitlab.
+---
+
+### Настройка доступа к registry
+
+Для корректной работы containerd с registry GitLab без TLS необходимо выполнить настройку на всех узлах кластера.
+
+#### 1. Создать директорию registry
+
+```bash
+sudo mkdir -p /etc/containerd/certs.d/registry.<NLB-IP>.nip.io
+```
+
+#### 2. Создать hosts.toml
+
+```bash
+sudo tee /etc/containerd/certs.d/registry.<NLB-IP>.nip.io/hosts.toml <<EOF
+server = "https://registry.<NLB-IP>.nip.io"
+
+[host."https://registry.<NLB-IP>.nip.io"]
+  skip_verify = true
+  capabilities = ["pull", "resolve"]
+EOF
+```
+
+`skip_verify = true` отключает проверку TLS-сертификата registry.
+
+#### 3. Перезапустить containerd
+
+```bash
+sudo systemctl restart containerd
+```
+
+---
+
+### Запуск сборки
+
+После push в ветку main репозитория GitLab автоматически запускается pipeline:
+- сборка Docker image;
+- push образа в GitLab Registry;
+
+
+### Запуск деплоя приложения
+
+Для запуска деплоя приложения в Kubernetes необходимо создать Git tag, например:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+После отправки тега автоматически запускается GitLab Pipeline, который:
+- собирает Docker image;
+- публикует образ в GitLab Container Registry;
+- выполняет деплой приложения в Kubernetes-кластер.

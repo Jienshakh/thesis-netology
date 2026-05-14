@@ -42,3 +42,6 @@ k8s/CSI/manifests/*
 
 ### Github Action Secrets
 **.secret**
+
+### gitlab values
+k8s/gitlab/helm/values.yaml

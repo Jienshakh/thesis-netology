@@ -51,7 +51,8 @@ envsubst < k8s/monitoring/grafana-ingress.yaml.tpl > k8s/monitoring/overlays/gra
 export nlb_ip=$(terraform -chdir=infra output -raw nlb_ip)
 envsubst < k8s/app/ingress.yaml.tpl > k8s/app/manifests/ingress.yaml
 
-### Гененрируем ingress для atlantis с адресом NLB
+### Гененрируем values для helm чарта gitlab с адресом NLB
 
 export nlb_ip=$(terraform -chdir=infra output -raw nlb_ip)
-envsubst < k8s/CSI/ingress.yaml.tpl > k8s/CSI/manifests/ingress.yaml
+envsubst < k8s/gitlab/values.yaml.tpl > k8s/gitlab/helm/values.yaml
+
