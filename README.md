@@ -872,3 +872,34 @@ git push origin v1.0.0
 - собирает Docker image;
 - публикует образ в GitLab Container Registry;
 - выполняет деплой приложения в Kubernetes-кластер.
+
+---
+
+## Скриншоты
+
+**Яндекс консоль**
+![vms_yc](img/vms_yc.PNG)
+**Поды в ns `default`**
+![ns_default_pods](img/ns_default_pods.PNG)
+**Поды в ns `ngress-nginx`**
+![ns_ingress-nginx_pods](img/ns_ingress-nginx_pods.PNG)
+**Поды в ns `ube-system`**
+![ns_kube-system_pods](img/ns_kube-system_pods.PNG)
+**Поды в ns `monitoring`**
+![ns_monitoring_pods](img/ns_monitoring_pods.PNG)
+**Все ингрессы в кластере**
+![ingresses](img/ingresses.PNG)
+**Github Action**
+![gh_action](img/gh_action.PNG)
+**Gitlab pipeline**
+![gl_build_deploy](img/gl_build_deploy.PNG)
+**Gitlab registry**
+![gl_registry](img/gl_registry.PNG)
+**Gitlab tag**
+![gl_tag](img/gl_tag.PNG)
+**Тестовое приложение**
+![test_app](img/test_app.PNG)
+**Data source в `Grafana`**
+![grafana_ds](img/grafana_ds.PNG)
+**Dashboard в `Grafana`**
+![grafana_dashboard](img/grafana_dashboard.PNG)
